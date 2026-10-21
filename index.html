@@ -12,7 +12,7 @@ button,select,input{font-size:16px;padding:8px;border-radius:8px;border:1px soli
 .d{aspect-ratio:1;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:13px;background:#eee}
 .d small{font-size:9px}.h{background:none;aspect-ratio:auto;font-size:11px;color:#888}
 .sel{outline:3px solid #000}
-.base{background:#bfe3ff}.chantier{background:#ffd9a0}.cp{background:#c9f2c7}.transit{background:#e3d4ff}.formation{background:#fff3a0}.atm{background:#ffc9d6}
+.base{background:#bfe3ff}.chantier{background:#ffd9a0}.cp{background:#c9f2c7}.transit{background:#e3d4ff}.formation{background:#fff3a0}.atm{background:#ffc9d6}.ce{background:#c2f0f0}.j80{background:#e0e0e0}
 .pal{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.pal button{flex:1;min-width:30%}
 table{width:100%;border-collapse:collapse}td,th{padding:4px;text-align:right}td:first-child,th:first-child{text-align:left}
 label{display:block;margin:6px 0}
@@ -34,17 +34,23 @@ label{display:block;margin:6px 0}
 <div id="reg"></div>
 <button onclick="exp()">Exporter</button> <input type="file" id="imp" accept=".json" onchange="imp(event)"></div>
 <script>
-const ST={base:"Base",chantier:"Chantier",cp:"CP",transit:"Transit",formation:"Formation",atm:"ATM"};
+const ST={base:"Base",chantier:"Chantier",cp:"CP",transit:"Transit",formation:"Formation",atm:"ATM",ce:"CE",j80:"Journée 80%"};
+const SH={base:"Base",chantier:"Chan",cp:"CP",transit:"Tran",formation:"Form",atm:"ATM",ce:"CE",j80:"80%"};
 const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-let S=JSON.parse(localStorage.getItem("conges")||"null")||{v:2,coef:{base:.7,chantier:.9,cp:-1,transit:.7,formation:.7,atm:0},prime:{chantier:1},debut:"2026-08-31",ini:0,days:{}};
-if(S.v!=2){
+let S=JSON.parse(localStorage.getItem("conges")||"null")||{v:3,coef:{base:.7,chantier:.9,cp:-1,transit:.7,formation:.7,atm:.1,ce:.1,j80:0},prime:{chantier:1},debut:"2026-08-31",ini:0,days:{}};
+if(S.v!=2&&S.v!=3){
  for(const k in S.days)if(S.days[k]=="repos")S.days[k]="cp";
  if(S.coef.repos!==undefined){S.coef.cp=S.coef.repos;delete S.coef.repos}
  if(S.prime.repos!==undefined){S.prime.cp=S.prime.repos;delete S.prime.repos}
  if(S.coef.cp===undefined)S.coef.cp=-1;
- if(S.coef.atm===undefined)S.coef.atm=0;
  let d=new Date(S.debut+"T12:00:00");d.setDate(d.getDate()-1);S.debut=iso(d);
- S.v=2;localStorage.setItem("conges",JSON.stringify(S));
+ S.v=2;
+}
+if(S.v==2){
+ if(!S.coef.atm)S.coef.atm=.1;
+ if(S.coef.ce===undefined)S.coef.ce=.1;
+ if(S.coef.j80===undefined)S.coef.j80=0;
+ S.v=3;localStorage.setItem("conges",JSON.stringify(S));
 }
 let cur=new Date(),sel=null;cur.setDate(1);
 const $=i=>document.getElementById(i),save=()=>{localStorage.setItem("conges",JSON.stringify(S));draw()};
@@ -59,7 +65,7 @@ let h="";["L","M","M","J","V","S","D"].forEach(x=>h+=`<div class=h style="text-a
 let off=(cur.getDay()+6)%7;for(let i=0;i<off;i++)h+="<div></div>";
 let n=new Date(cur.getFullYear(),cur.getMonth()+1,0).getDate();
 for(let i=1;i<=n;i++){let k=iso(new Date(cur.getFullYear(),cur.getMonth(),i)),s=S.days[k];
-h+=`<div class="d ${s||""} ${k==sel?"sel":""}" onclick="sel='${k}';draw()">${i}<small>${s?ST[s].slice(0,4):""}</small></div>`}
+h+=`<div class="d ${s||""} ${k==sel?"sel":""}" onclick="sel='${k}';draw()">${i}<small>${s?SH[s]:""}</small></div>`}
 $("cal").innerHTML=h;
 $("pal").innerHTML=sel?Object.keys(ST).map(s=>`<button onclick="setDay('${sel}','${s}')">${ST[s]}</button>`).join("")+`<button onclick="setDay('${sel}')">Effacer</button>`:"<i>Touche un jour pour le renseigner</i>";
 let t=+S.ini,pm={},ym=iso(cur).slice(0,7);
