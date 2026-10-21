@@ -12,10 +12,11 @@ button,select,input{font-size:16px;padding:8px;border-radius:8px;border:1px soli
 .d{aspect-ratio:1;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:13px;background:#eee}
 .d small{font-size:9px}.h{background:none;aspect-ratio:auto;font-size:11px;color:#888}
 .sel{outline:3px solid #000}
-.base{background:#bfe3ff}.chantier{background:#ffd9a0}.repos{background:#c9f2c7}.transit{background:#e3d4ff}.formation{background:#fff3a0}
+.base{background:#bfe3ff}.chantier{background:#ffd9a0}.cp{background:#c9f2c7}.transit{background:#e3d4ff}.formation{background:#fff3a0}.atm{background:#ffc9d6}
 .pal{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.pal button{flex:1;min-width:30%}
 table{width:100%;border-collapse:collapse}td,th{padding:4px;text-align:right}td:first-child,th:first-child{text-align:left}
 label{display:block;margin:6px 0}
+.note{font-size:12px;color:#666}
 </style></head><body>
 <div class="card big"><div><b id="solde">0</b>Congés</div><div><b id="pm">0</b>Primes (mois)</div><div><b id="pa">0</b>Primes (année)</div></div>
 <div class="card"><div class="nav"><button onclick="mv(-1)">‹</button><span id="titre"></span><button onclick="mv(1)">›</button></div>
@@ -26,20 +27,31 @@ label{display:block;margin:6px 0}
 <select id="st"></select> <button onclick="fill()">Appliquer</button></div>
 <div class="card"><b>Primes par mois</b><table id="tp"></table></div>
 <div class="card"><b>Réglages</b>
+<div class="card" style="background:#f2f2f7"><b>Solde de départ</b>
+<label>Solde connu (jours) <input type="number" step="0.1" id="ini"></label>
+<label>À la date du <input type="date" id="deb"></label>
+<div class="note">Seuls les jours après cette date sont comptés.</div></div>
 <div id="reg"></div>
-<label>Date d'embauche <input type="date" id="deb"></label>
-<label>Solde de départ <input type="number" step="0.1" id="ini"></label>
 <button onclick="exp()">Exporter</button> <input type="file" id="imp" accept=".json" onchange="imp(event)"></div>
 <script>
-const ST={base:"Base",chantier:"Chantier",repos:"Repos",transit:"Transit",formation:"Formation"};
-let S=JSON.parse(localStorage.getItem("conges")||"null")||{coef:{base:.7,chantier:.9,repos:-1,transit:.7,formation:.7},prime:{chantier:1},debut:"2026-09-01",ini:0,days:{}};
+const ST={base:"Base",chantier:"Chantier",cp:"CP",transit:"Transit",formation:"Formation",atm:"ATM"};
+const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+let S=JSON.parse(localStorage.getItem("conges")||"null")||{v:2,coef:{base:.7,chantier:.9,cp:-1,transit:.7,formation:.7,atm:0},prime:{chantier:1},debut:"2026-08-31",ini:0,days:{}};
+if(S.v!=2){
+ for(const k in S.days)if(S.days[k]=="repos")S.days[k]="cp";
+ if(S.coef.repos!==undefined){S.coef.cp=S.coef.repos;delete S.coef.repos}
+ if(S.prime.repos!==undefined){S.prime.cp=S.prime.repos;delete S.prime.repos}
+ if(S.coef.cp===undefined)S.coef.cp=-1;
+ if(S.coef.atm===undefined)S.coef.atm=0;
+ let d=new Date(S.debut+"T12:00:00");d.setDate(d.getDate()-1);S.debut=iso(d);
+ S.v=2;localStorage.setItem("conges",JSON.stringify(S));
+}
 let cur=new Date(),sel=null;cur.setDate(1);
 const $=i=>document.getElementById(i),save=()=>{localStorage.setItem("conges",JSON.stringify(S));draw()};
-const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 const r=x=>Math.round(x*100)/100;
 function mv(n){cur.setMonth(cur.getMonth()+n);draw()}
 function setDay(k,s){if(s)S.days[k]=s;else delete S.days[k];save()}
-function fill(){let a=new Date($("d1").value),b=new Date($("d2").value);if(isNaN(a)||isNaN(b))return;
+function fill(){let a=new Date($("d1").value+"T12:00:00"),b=new Date($("d2").value+"T12:00:00");if(isNaN(a)||isNaN(b))return;
 for(;a<=b;a.setDate(a.getDate()+1))S.days[iso(a)]=$("st").value;save()}
 function draw(){
 $("titre").textContent=cur.toLocaleDateString("fr-FR",{month:"long",year:"numeric"});
@@ -50,17 +62,17 @@ for(let i=1;i<=n;i++){let k=iso(new Date(cur.getFullYear(),cur.getMonth(),i)),s=
 h+=`<div class="d ${s||""} ${k==sel?"sel":""}" onclick="sel='${k}';draw()">${i}<small>${s?ST[s].slice(0,4):""}</small></div>`}
 $("cal").innerHTML=h;
 $("pal").innerHTML=sel?Object.keys(ST).map(s=>`<button onclick="setDay('${sel}','${s}')">${ST[s]}</button>`).join("")+`<button onclick="setDay('${sel}')">Effacer</button>`:"<i>Touche un jour pour le renseigner</i>";
-let t=S.ini,pm={},ym=iso(cur).slice(0,7);
-for(const k in S.days){if(k<S.debut)continue;let s=S.days[k];t+=S.coef[s]||0;let p=S.prime[s]||0;if(p)pm[k.slice(0,7)]=(pm[k.slice(0,7)]||0)+p}
+let t=+S.ini,pm={},ym=iso(cur).slice(0,7);
+for(const k in S.days){if(k<=S.debut)continue;let s=S.days[k];t+=S.coef[s]||0;let p=S.prime[s]||0;if(p)pm[k.slice(0,7)]=(pm[k.slice(0,7)]||0)+p}
 $("solde").textContent=r(t);$("pm").textContent=pm[ym]||0;
 $("pa").textContent=Object.keys(pm).filter(m=>m.slice(0,4)==ym.slice(0,4)).reduce((a,m)=>a+pm[m],0);
 $("tp").innerHTML="<tr><th>Mois<th>Primes</tr>"+Object.keys(pm).sort().map(m=>`<tr><td>${m}<td>${pm[m]}</tr>`).join("");
 }
 $("st").innerHTML=Object.keys(ST).map(s=>`<option value=${s}>${ST[s]}</option>`).join("");
-$("reg").innerHTML=Object.keys(ST).map(s=>`<label>${ST[s]} : congés <input type=number step=0.1 style="width:70px" value="${S.coef[s]}" onchange="S.coef.${s}=+this.value;save()"> prime <input type=number step=1 style="width:60px" value="${S.prime[s]||0}" onchange="S.prime.${s}=+this.value;save()"></label>`).join("");
+$("reg").innerHTML=Object.keys(ST).map(s=>`<label>${ST[s]} : congés <input type=number step=0.1 style="width:70px" value="${S.coef[s]||0}" onchange="S.coef.${s}=+this.value;save()"> prime <input type=number step=1 style="width:60px" value="${S.prime[s]||0}" onchange="S.prime.${s}=+this.value;save()"></label>`).join("");
 $("deb").value=S.debut;$("deb").onchange=e=>{S.debut=e.target.value;save()};
 $("ini").value=S.ini;$("ini").onchange=e=>{S.ini=+e.target.value;save()};
 function exp(){let a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(S)]));a.download="conges.json";a.click()}
-function imp(e){let f=new FileReader();f.onload=()=>{S=JSON.parse(f.result);save();location.reload()};f.readAsText(e.target.files[0])}
+function imp(e){let f=new FileReader();f.onload=()=>{S=JSON.parse(f.result);localStorage.setItem("conges",JSON.stringify(S));location.reload()};f.readAsText(e.target.files[0])}
 draw();
 </script></body></html>
