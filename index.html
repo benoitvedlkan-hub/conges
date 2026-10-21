@@ -5,8 +5,8 @@
 <meta name="theme-color" content="#0b3d6b">
 <title>Congés</title>
 <style>
-:root{--bg:#eef2f7;--card:#fff;--txt:#14202e;--mut:#6b7a8c;--line:#e3e8ef;--acc:#0b6bcb;--inp:#f5f7fa}
-@media(prefers-color-scheme:dark){:root{--bg:#0d141d;--card:#17212d;--txt:#eaf0f7;--mut:#8b9bb0;--line:#26323f;--acc:#4da3ff;--inp:#1e2a38}}
+:root{--bg:#eef2f7;--card:#fff;--txt:#14202e;--mut:#6b7a8c;--line:#e3e8ef;--acc:#0b6bcb;--inp:#f5f7fa;--warn:#fff3cd;--warnx:#7a5c00}
+@media(prefers-color-scheme:dark){:root{--bg:#0d141d;--card:#17212d;--txt:#eaf0f7;--mut:#8b9bb0;--line:#26323f;--acc:#4da3ff;--inp:#1e2a38;--warn:#3a3316;--warnx:#ffe08a}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0;background:var(--bg);color:var(--txt);padding-bottom:env(safe-area-inset-bottom)}
 .hero{background:linear-gradient(160deg,#0b3d6b,#0b6bcb);color:#fff;padding:calc(env(safe-area-inset-top) + 18px) 16px 70px;border-radius:0 0 28px 28px}
@@ -15,15 +15,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0
 .hero .sol small{font-size:16px;font-weight:500;opacity:.8;margin-left:6px}
 .wrap{padding:0 12px;margin-top:-52px;max-width:560px;margin-left:auto;margin-right:auto}
 .card{background:var(--card);border-radius:20px;padding:14px;margin-bottom:12px;box-shadow:0 2px 10px rgba(10,30,60,.07)}
-.stats{display:flex;gap:10px}
+.stats{display:flex;gap:10px;margin-bottom:12px}
 .stat{flex:1;background:var(--card);border-radius:18px;padding:12px;text-align:center;box-shadow:0 2px 10px rgba(10,30,60,.07)}
 .stat b{display:block;font-size:26px;color:var(--acc)}.stat span{font-size:12px;color:var(--mut)}
-.stats{margin-bottom:12px}
 .nav{display:flex;justify-content:space-between;align-items:center}
 .nav span{font-weight:700;font-size:17px;text-transform:capitalize}
 .nav button{width:40px;height:40px;border-radius:50%;font-size:20px;background:var(--inp);color:var(--txt);border:0}
-button,select,input{font-size:16px;font-family:inherit;color:var(--txt)}
-select,input{padding:9px;border-radius:12px;border:1px solid var(--line);background:var(--inp)}
+button,select,input,textarea{font-size:16px;font-family:inherit;color:var(--txt)}
+select,input,textarea{padding:9px;border-radius:12px;border:1px solid var(--line);background:var(--inp)}
 button{border:0;border-radius:12px;padding:10px 14px;background:var(--acc);color:#fff;font-weight:600}
 .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:12px}
 .d{aspect-ratio:1;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:14px;font-weight:600;background:var(--inp);color:var(--txt)}
@@ -42,10 +41,13 @@ details summary{font-weight:700;font-size:16px;cursor:pointer;list-style:none}de
 label{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:8px 0;font-size:15px}
 .note{font-size:12px;color:var(--mut)}
 .box{background:var(--inp);border-radius:14px;padding:10px;margin:10px 0}
-.sec{background:var(--inp);color:var(--txt)}
+.warn{background:var(--warn);color:var(--warnx);border-radius:14px;padding:10px;margin-bottom:12px;font-size:14px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.warn button{background:var(--warnx);color:var(--warn);flex:1;min-width:120px}
+textarea{width:100%;height:110px;font-family:ui-monospace,Menlo,monospace;font-size:12px}
 </style></head><body>
 <div class="hero"><h1>Solde de congés</h1><div class="sol"><span id="solde">0</span><small>jours</small></div></div>
 <div class="wrap">
+<div class="warn" id="warn" style="display:none"><span id="wtxt"></span><button onclick="copy()">Copier la sauvegarde</button></div>
 <div class="stats"><div class="stat"><b id="pm">0</b><span>Primes ce mois</span></div><div class="stat"><b id="pa">0</b><span>Primes cette année</span></div></div>
 <div class="card"><div class="nav"><button onclick="mv(-1)">‹</button><span id="titre"></span><button onclick="mv(1)">›</button></div>
 <div class="grid" id="cal"></div>
@@ -54,20 +56,30 @@ label{display:flex;justify-content:space-between;align-items:center;gap:8px;marg
 <div class="row"><input type="date" id="d1"><input type="date" id="d2"></div>
 <div class="row" style="margin-top:8px"><select id="st" style="flex:1"></select><button onclick="fill()">Appliquer</button></div></div>
 <div class="card"><h2>Primes par mois</h2><table id="tp"></table></div>
+<div class="card"><details><summary>Sauvegarde</summary>
+<div class="box"><b>Copier mes données</b>
+<div class="note">Copie le texte ci-dessous dans une note, un message à toi-même ou une app de notes. C'est ta sauvegarde.</div>
+<textarea id="txt" readonly></textarea>
+<button onclick="copy()">Copier</button></div>
+<div class="box"><b>Restaurer</b>
+<div class="note">Colle ici une sauvegarde, puis touche Restaurer. Tes données actuelles seront remplacées.</div>
+<textarea id="txt2" placeholder="Colle ici le texte de sauvegarde"></textarea>
+<button onclick="restore()">Restaurer</button></div>
+<div class="note" id="last"></div>
+</details></div>
 <div class="card"><details><summary>Réglages</summary>
 <div class="box"><b>Solde de départ</b>
 <label>Solde connu (jours) <input type="number" step="0.1" id="ini" style="width:100px"></label>
 <label>À la date du <input type="date" id="deb"></label>
 <div class="note">Seuls les jours après cette date sont comptés.</div></div>
 <div id="reg"></div>
-<div class="row" style="margin-top:10px"><button onclick="exp()">Exporter</button><input type="file" id="imp" accept=".json" onchange="imp(event)"></div>
 </details></div>
 </div>
 <script>
 const ST={base:"Base",chantier:"Chantier",cp:"CP",transit:"Transit",formation:"Formation",atm:"ATM",ce:"CE",j80:"Journée 80%"};
 const SH={base:"Base",chantier:"Chan",cp:"CP",transit:"Tran",formation:"Form",atm:"ATM",ce:"CE",j80:"80%"};
 const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-let S=JSON.parse(localStorage.getItem("conges")||"null")||{v:3,coef:{base:.7,chantier:.9,cp:-1,transit:.7,formation:.7,atm:.1,ce:.1,j80:0},prime:{chantier:1},debut:"2026-08-31",ini:0,days:{}};
+let S=JSON.parse(localStorage.getItem("conges")||"null")||{v:3,coef:{base:.7,chantier:.9,cp:-1,transit:.7,formation:.7,atm:.1,ce:.1,j80:0},prime:{chantier:1},debut:"2026-08-31",ini:0,days:{},backup:""};
 if(S.v!=2&&S.v!=3){
  for(const k in S.days)if(S.days[k]=="repos")S.days[k]="cp";
  if(S.coef.repos!==undefined){S.coef.cp=S.coef.repos;delete S.coef.repos}
@@ -82,14 +94,24 @@ if(S.v==2){
  if(S.coef.j80===undefined)S.coef.j80=0;
  S.v=3;localStorage.setItem("conges",JSON.stringify(S));
 }
+if(!S.backup)S.backup="";
 let cur=new Date(),sel=null;cur.setDate(1);
 const today=iso(new Date());
 const $=i=>document.getElementById(i),save=()=>{localStorage.setItem("conges",JSON.stringify(S));draw()};
 const r=x=>Math.round(x*100)/100;
+const daysN=()=>Object.keys(S.days).length;
+const backup=()=>{S.backup=today;localStorage.setItem("conges",JSON.stringify(S));draw()};
 function mv(n){cur.setMonth(cur.getMonth()+n);draw()}
 function setDay(k,s){if(s)S.days[k]=s;else delete S.days[k];save()}
 function fill(){let a=new Date($("d1").value+"T12:00:00"),b=new Date($("d2").value+"T12:00:00");if(isNaN(a)||isNaN(b))return;
 for(;a<=b;a.setDate(a.getDate()+1))S.days[iso(a)]=$("st").value;save()}
+function copy(){const t=JSON.stringify(S);$("txt").value=t;
+const done=()=>{backup();alert("Sauvegarde copiée. Colle-la dans une note.")};
+if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(done,()=>{$("txt").select();done()});
+else{$("txt").select();done()}}
+function restore(){try{const o=JSON.parse($("txt2").value.trim());if(!o||typeof o!="object"||!o.days)throw 0;
+S=o;if(!S.backup)S.backup=today;localStorage.setItem("conges",JSON.stringify(S));alert("Données restaurées.");location.reload()}
+catch(e){alert("Ce texte n'est pas une sauvegarde valide.")}}
 function draw(){
 $("titre").textContent=cur.toLocaleDateString("fr-FR",{month:"long",year:"numeric"});
 let h="";["L","M","M","J","V","S","D"].forEach(x=>h+=`<div class=h>${x}</div>`);
@@ -104,12 +126,16 @@ for(const k in S.days){if(k<=S.debut)continue;let s=S.days[k];t+=S.coef[s]||0;le
 $("solde").textContent=r(t);$("pm").textContent=pm[ym]||0;
 $("pa").textContent=Object.keys(pm).filter(m=>m.slice(0,4)==ym.slice(0,4)).reduce((a,m)=>a+pm[m],0);
 $("tp").innerHTML="<tr><th>Mois<th>Primes</tr>"+Object.keys(pm).sort().map(m=>`<tr><td>${m}<td>${pm[m]}</tr>`).join("");
+$("txt").value=JSON.stringify(S);
+$("last").textContent=S.backup?("Dernière sauvegarde : "+S.backup):"Tu n'as encore jamais fait de sauvegarde.";
+let j=S.backup?Math.round((new Date(today)-new Date(S.backup))/864e5):999;
+if(daysN()&&j>=15){$("warn").style.display="flex";
+$("wtxt").textContent=j>900?"Pense à enregistrer une sauvegarde de tes données.":("Dernière sauvegarde il y a "+j+" jours. Pense à en sauvegarder une.")}
+else $("warn").style.display="none";
 }
 $("st").innerHTML=Object.keys(ST).map(s=>`<option value=${s}>${ST[s]}</option>`).join("");
 $("reg").innerHTML=Object.keys(ST).map(s=>`<label><span>${ST[s]}</span><span>congés <input type=number step=0.1 style="width:64px" value="${S.coef[s]||0}" onchange="S.coef.${s}=+this.value;save()"> prime <input type=number step=1 style="width:54px" value="${S.prime[s]||0}" onchange="S.prime.${s}=+this.value;save()"></span></label>`).join("");
 $("deb").value=S.debut;$("deb").onchange=e=>{S.debut=e.target.value;save()};
 $("ini").value=S.ini;$("ini").onchange=e=>{S.ini=+e.target.value;save()};
-function exp(){let a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(S)]));a.download="conges.json";a.click()}
-function imp(e){let f=new FileReader();f.onload=()=>{S=JSON.parse(f.result);localStorage.setItem("conges",JSON.stringify(S));location.reload()};f.readAsText(e.target.files[0])}
 draw();
 </script></body></html>
