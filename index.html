@@ -49,8 +49,9 @@ textarea{width:100%;height:110px;font-family:ui-monospace,Menlo,monospace;font-s
 <div class="hero"><h1>Solde de congés</h1><div class="sol"><span id="solde">0</span><small>jours</small></div></div>
 <div class="wrap">
 <div class="warn" id="warn" style="display:none"><span id="wtxt"></span><button onclick="copy()">Copier la sauvegarde</button></div>
-<div class="stats"><div class="stat"><b id="pm">0</b><span>Primes ce mois</span></div><div class="stat"><b id="pa">0</b><span>Primes cette année</span></div></div>
-<div class="stats"><div class="stat"><b id="rm">0</b><span>Repas pris ce mois (sur le maximum possible)</span></div><div class="stat"><b id="re">0 €</b><span>Montant des repas</span></div></div>
+<div class="stats"><div class="stat"><b id="pg">0</b><span>Primes gagnées ce mois</span></div><div class="stat"><b id="pge">0 €</b><span>Montant brut gagné</span></div></div>
+<div class="stats"><div class="stat"><b id="pp">0</b><span>Primes payées ce mois</span></div><div class="stat"><b id="ppe">0 €</b><span>Montant brut payé</span></div></div>
+<div class="stats" style="margin-top:0"><div class="stat"><b id="rm">0</b><span>Repas pris ce mois (sur le maximum possible)</span></div><div class="stat"><b id="re">0 €</b><span>Montant des repas</span></div></div>
 <div class="card"><div class="nav"><button onclick="mv(-1)">‹</button><span id="titre"></span><button onclick="mv(1)">›</button></div>
 <div class="grid" id="cal"></div>
 <div class="pal" id="pal"></div></div>
@@ -58,8 +59,8 @@ textarea{width:100%;height:110px;font-family:ui-monospace,Menlo,monospace;font-s
 <div class="row"><input type="date" id="d1"><input type="date" id="d2"></div>
 <div class="row" style="margin-top:8px"><select id="st" style="flex:1"></select><select id="ml" style="flex:1"><option value="">Repas : défaut du statut</option><option value="0">0 repas</option><option value="1">1 repas</option><option value="2">2 repas</option></select></div>
 <div class="row" style="margin-top:8px"><button onclick="fill()" style="flex:1">Appliquer</button></div></div>
-<div class="card"><h2>Primes par mois</h2><table id="tp"></table></div>
-<div class="card"><h2>Repas par mois</h2><table id="tm"></table></div>
+<div class="card"><h2>Primes par mois</h2><table id="tp"></table><div class="note" id="tps"></div></div>
+<div class="card"><h2>Repas par mois</h2><table id="tm"></table><div class="note" id="tms"></div></div>
 <div class="card"><details><summary>Sauvegarde</summary>
 <div class="box"><b>Copier mes données</b>
 <div class="note">Copie le texte ci-dessous dans une note, un message à toi-même ou une app de notes. C'est ta sauvegarde.</div>
@@ -76,6 +77,7 @@ textarea{width:100%;height:110px;font-family:ui-monospace,Menlo,monospace;font-s
 <label>Solde connu (jours) <input type="number" step="0.1" id="ini" style="width:100px"></label>
 <label>À la date du <input type="date" id="deb"></label>
 <div class="note">Seuls les jours après cette date sont comptés.</div></div>
+<label>Montant d'une prime (€ brut) <input type="number" step="0.5" id="pprix" style="width:100px"></label>
 <label>Prix d'un repas (€) <input type="number" step="0.01" id="prix" style="width:100px"></label>
 <div id="reg"></div>
 </details></div>
@@ -84,7 +86,7 @@ textarea{width:100%;height:110px;font-family:ui-monospace,Menlo,monospace;font-s
 const ST={base:"Base",chantier:"Chantier",cp:"CP",transit:"Transit",formation:"Formation",atm:"ATM",ce:"CE",j80:"Journée 80%"};
 const SH={base:"Base",chantier:"Chan",cp:"CP",transit:"Tran",formation:"Form",atm:"ATM",ce:"CE",j80:"80%"};
 const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-let S=JSON.parse(localStorage.getItem("conges")||"null")||{v:3,coef:{base:.7,chantier:.9,cp:-1,transit:.7,formation:.7,atm:.1,ce:.1,j80:0},prime:{chantier:1},debut:"2026-08-31",ini:0,days:{},backup:"",meals:{},prix:7.88,dm:{base:1,chantier:0,cp:2,transit:2,formation:2,atm:2,ce:2,j80:0}};
+let S=JSON.parse(localStorage.getItem("conges")||"null")||{v:3,coef:{base:.7,chantier:.9,cp:-1,transit:.7,formation:.7,atm:.1,ce:.1,j80:0},prime:{chantier:1},debut:"2026-08-31",ini:0,days:{},backup:"",meals:{},prix:7.88,pp:50,dm:{base:1,chantier:0,cp:2,transit:2,formation:2,atm:2,ce:2,j80:0}};
 if(S.v!=2&&S.v!=3){
  for(const k in S.days)if(S.days[k]=="repos")S.days[k]="cp";
  if(S.coef.repos!==undefined){S.coef.cp=S.coef.repos;delete S.coef.repos}
@@ -99,7 +101,7 @@ if(S.v==2){
  if(S.coef.j80===undefined)S.coef.j80=0;
  S.v=3;localStorage.setItem("conges",JSON.stringify(S));
 }
-if(!S.backup)S.backup="";if(!S.meals)S.meals={};if(!S.prix)S.prix=7.88;if(!S.dm)S.dm={base:1,chantier:0,cp:2,transit:2,formation:2,atm:2,ce:2,j80:0};
+if(!S.backup)S.backup="";if(!S.meals)S.meals={};if(!S.prix)S.prix=7.88;if(!S.pp)S.pp=50;if(!S.dm)S.dm={base:1,chantier:0,cp:2,transit:2,formation:2,atm:2,ce:2,j80:0};
 if(S.dm.chantier===2&&!S.meals&&!S.dmv){S.dm.chantier=0;S.dm.cp=2;S.dm.transit=2;S.dm.formation=2;S.dm.atm=2;S.dm.ce=2;S.dmv=1;localStorage.setItem("conges",JSON.stringify(S))}
 let cur=new Date(),sel=null;cur.setDate(1);
 const today=iso(new Date());
@@ -111,6 +113,7 @@ function mv(n){cur.setMonth(cur.getMonth()+n);draw()}
 function setDay(k,s){if(s)S.days[k]=s;else{delete S.days[k];delete S.meals[k]}save()}
 function setMeal(k,n){S.meals[k]=n;save()}
 const meal=k=>S.meals[k]!==undefined?S.meals[k]:(S.dm[S.days[k]]||0);
+const pay=k=>{let d=new Date(k+"T12:00:00");if(+k.slice(8,10)>20)d.setMonth(d.getMonth()+1);return iso(d).slice(0,7)};
 const dim=m=>new Date(+m.slice(0,4),+m.slice(5,7),0).getDate();
 const eur=x=>(Math.round(x*100)/100).toFixed(2).replace(".",",")+" €";
 function fill(){let a=new Date($("d1").value+"T12:00:00"),b=new Date($("d2").value+"T12:00:00");if(isNaN(a)||isNaN(b))return;
@@ -131,14 +134,20 @@ for(let i=1;i<=n;i++){let k=iso(new Date(cur.getFullYear(),cur.getMonth(),i)),s=
 h+=`<div class="d ${s||""} ${k==today?"today":""} ${k==sel?"sel":""}" onclick="sel='${k}';draw()">${i}<small>${s?SH[s]:""}</small></div>`}
 $("cal").innerHTML=h;
 $("pal").innerHTML=sel?Object.keys(ST).map(s=>`<button class="${s}" onclick="setDay('${sel}','${s}')">${ST[s]}</button>`).join("")+`<button class="clr" onclick="setDay('${sel}')">Effacer</button>`+(S.days[sel]?`<div class="lb">Repas pris ce jour</div>`+[0,1,2].map(n=>`<button class="ml ${meal(sel)===n?"on":""}" onclick="setMeal('${sel}',${n})">${n} repas</button>`).join(""):""):"<i>Touche un jour pour le renseigner</i>";
-let t=+S.ini,pm={},ym=iso(cur).slice(0,7);
-for(const k in S.days){if(k<=S.debut)continue;let s=S.days[k];t+=S.coef[s]||0;let p=S.prime[s]||0;if(p)pm[k.slice(0,7)]=(pm[k.slice(0,7)]||0)+p}
-$("solde").textContent=r(t);$("pm").textContent=pm[ym]||0;
-$("pa").textContent=Object.keys(pm).filter(m=>m.slice(0,4)==ym.slice(0,4)).reduce((a,m)=>a+pm[m],0);
-$("tp").innerHTML="<tr><th>Mois<th>Primes</tr>"+Object.keys(pm).sort().map(m=>`<tr><td>${m}<td>${pm[m]}</tr>`).join("");
+let t=+S.ini,pm={},pm2={},ym=iso(cur).slice(0,7);
+for(const k in S.days){if(k<=S.debut)continue;let s=S.days[k];t+=S.coef[s]||0;let p=S.prime[s]||0;if(p){pm[k.slice(0,7)]=(pm[k.slice(0,7)]||0)+p;pm2[pay(k).slice(0,7)]=(pm2[pay(k).slice(0,7)]||0)+p}}
+$("solde").textContent=r(t);
+$("pg").textContent=pm[ym]||0;$("pge").textContent=eur((pm[ym]||0)*S.pp);
+$("pp").textContent=pm2[ym]||0;$("ppe").textContent=eur((pm2[ym]||0)*S.pp);
+const allm=[...new Set(Object.keys(pm).concat(Object.keys(pm2)))].sort();
+$("tp").innerHTML="<tr><th>Mois<th>Gagnées<th>Payées<th>Gagné<th>Payé</tr>"+allm.map(m=>`<tr><td>${m}<td>${pm[m]||0}<td>${pm2[m]||0}<td>${eur((pm[m]||0)*S.pp)}<td>${eur((pm2[m]||0)*S.pp)}</tr>`).join("");
+const tG=allm.reduce((a,m)=>a+(pm[m]||0),0),tP=allm.reduce((a,m)=>a+(pm2[m]||0),0);
+$("tps").textContent=allm.length?`Total : ${tG} prime(s) gagnée(s) pour ${eur(tG*S.pp)} et ${tP} payée(s) pour ${eur(tP*S.pp)}.`:"Aucune prime pour l'instant.";
 let mm={};for(const k in S.days){mm[k.slice(0,7)]=(mm[k.slice(0,7)]||0)+meal(k)}
 $("rm").textContent=(mm[ym]||0)+" / "+dim(ym)*2;$("re").textContent=eur((mm[ym]||0)*S.prix);
 $("tm").innerHTML="<tr><th>Mois<th>Repas pris / possibles<th>Montant</tr>"+Object.keys(mm).sort().map(m=>`<tr><td>${m}<td>${mm[m]} / ${dim(m)*2}<td>${eur(mm[m]*S.prix)}</tr>`).join("");
+const tR=Object.keys(mm).reduce((a,m)=>a+mm[m],0);
+$("tms").textContent=Object.keys(mm).length?`Total : ${tR} repas pour ${eur(tR*S.prix)}.`:"Aucun repas pour l'instant.";
 $("txt").value=JSON.stringify(S);
 $("last").textContent=S.backup?("Dernière sauvegarde : "+S.backup):"Tu n'as encore jamais fait de sauvegarde.";
 let j=S.backup?Math.round((new Date(today)-new Date(S.backup))/864e5):999;
@@ -149,6 +158,7 @@ else $("warn").style.display="none";
 $("st").innerHTML=Object.keys(ST).map(s=>`<option value=${s}>${ST[s]}</option>`).join("");
 $("reg").innerHTML=Object.keys(ST).map(s=>`<label style="flex-wrap:wrap"><span>${ST[s]}</span><span>congés <input type=number step=0.1 style="width:64px" value="${S.coef[s]||0}" onchange="S.coef.${s}=+this.value;save()"> prime <input type=number step=1 style="width:54px" value="${S.prime[s]||0}" onchange="S.prime.${s}=+this.value;save()"> repas <input type=number min=0 max=2 step=1 style="width:54px" value="${S.dm[s]||0}" onchange="S.dm.${s}=+this.value;save()"></span></label>`).join("");
 $("deb").value=S.debut;$("deb").onchange=e=>{S.debut=e.target.value;save()};
+$("pprix").value=S.pp;$("pprix").onchange=e=>{S.pp=+e.target.value;save()};
 $("prix").value=S.prix;$("prix").onchange=e=>{S.prix=+e.target.value;save()};
 $("ini").value=S.ini;$("ini").onchange=e=>{S.ini=+e.target.value;save()};
 draw();
