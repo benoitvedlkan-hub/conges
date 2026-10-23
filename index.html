@@ -106,12 +106,13 @@ textarea{width:100%;height:110px;font-family:ui-monospace,Menlo,monospace;font-s
 <div class="box"><b>Solde de départ</b>
 <label>Solde connu (jours) <input type="number" step="0.1" id="ini" style="width:100px"></label>
 <label>À la date du <input type="date" id="deb"></label>
-<div class="note">Seuls les jours après cette date sont comptés.</div></div>
+<div class="note">Seuls les jours après cette date sont comptés. Servait avant les soldes par fonction ; il a été reporté sur Matelot.</div></div>
 <label>Montant d'une prime (€ brut) <input type="number" step="0.5" id="pprix" style="width:100px"></label>
 <label>Prix d'un repas (€) <input type="number" step="0.01" id="prix" style="width:100px"></label>
 <div id="reg"></div>
 <div class="note">Fonctions</div>
 <label>Fonction par défaut <select id="fd" style="width:170px"></select></label>
+<div class="note">Solde de départ et date par fonction. Laisse 0 si la fonction n'a pas de solde propre.</div>
 <div id="freg"></div>
 <label>Thème <select id="th" style="width:130px"><option value="auto">Automatique</option><option value="clair">Clair</option><option value="sombre">Sombre</option></select></label>
 <div class="note">Couleurs des statuts</div>
@@ -126,7 +127,7 @@ const SH={base:"Base",chantier:"Chan",cp:"CP",transit:"Tran",formation:"Form",at
 const FN={mat:"Matelot",ouv:"Ouvrier mécanicien",cui:"Cuisinier",lie:"Lieutenant",snd:"Second capitaine",cme:"Chef mécanicien",cap:"Capitaine"};
 const FS={mat:"Mat",ouv:"Ouv",cui:"Cui",lie:"Lt",snd:"2nd",cme:"CM",cap:"Cap"};
 const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-let S=JSON.parse(localStorage.getItem("conges")||"null")||{v:3,coef:{base:.7,chantier:.9,cp:-1,transit:.7,formation:.7,atm:.1,ce:.1,j80:0},prime:{chantier:1},debut:"2026-08-31",ini:0,days:{},backup:"",meals:{},prix:7.88,pp:50,dm:{base:1,chantier:0,cp:2,transit:2,formation:2,atm:2,ce:2,j80:2},fonc:"mat",fdef:"mat",fon:{},col:{base:"#9fd0ff",chantier:"#ffc983",cp:"#a6e6a1",transit:"#d3bdff",formation:"#ffe97a",atm:"#ffb3c7",ce:"#9eeaea",j80:"#cfd5dc"},th:"auto"};
+let S=JSON.parse(localStorage.getItem("conges")||"null")||{v:3,coef:{base:.7,chantier:.9,cp:-1,transit:.7,formation:.7,atm:.1,ce:.1,j80:0},prime:{chantier:1},debut:"2026-08-31",ini:0,days:{},backup:"",meals:{},prix:7.88,pp:50,dm:{base:1,chantier:0,cp:2,transit:2,formation:2,atm:2,ce:2,j80:2},fonc:"mat",fdef:"mat",fon:{},fdep:{},soldeF:{},fini:{},col:{base:"#9fd0ff",chantier:"#ffc983",cp:"#a6e6a1",transit:"#d3bdff",formation:"#ffe97a",atm:"#ffb3c7",ce:"#9eeaea",j80:"#cfd5dc"},th:"auto"};
 if(S.v!=2&&S.v!=3){
  for(const k in S.days)if(S.days[k]=="repos")S.days[k]="cp";
  if(S.coef.repos!==undefined){S.coef.cp=S.coef.repos;delete S.coef.repos}
@@ -144,6 +145,8 @@ if(S.v==2){
 if(!S.backup)S.backup="";if(!S.meals)S.meals={};if(!S.prix)S.prix=7.88;if(!S.pp)S.pp=50;if(!S.dm)S.dm={base:1,chantier:0,cp:2,transit:2,formation:2,atm:2,ce:2,j80:0};
 if(!S.col)S.col={base:"#9fd0ff",chantier:"#ffc983",cp:"#a6e6a1",transit:"#d3bdff",formation:"#ffe97a",atm:"#ffb3c7",ce:"#9eeaea",j80:"#cfd5dc"};
 if(!S.th)S.th="auto";if(!S.fonc)S.fonc="mat";if(!S.fdef)S.fdef=S.fonc;if(!S.fon)S.fon={};
+if(!S.fdep)S.fdep={};if(!S.soldeF)S.soldeF={};if(!S.fini)S.fini={};
+if(!S.fini.mat&&+S.ini){S.fdep.mat=S.debut;S.soldeF.mat=+S.ini;S.fini.mat=1;localStorage.setItem("conges",JSON.stringify(S))}
 if(S.dm.chantier===2&&!S.meals&&!S.dmv){S.dm.chantier=0;S.dm.cp=2;S.dm.transit=2;S.dm.formation=2;S.dm.atm=2;S.dm.ce=2;S.dmv=1;localStorage.setItem("conges",JSON.stringify(S))}
 if(S.dm.j80===0&&!S.dmv2){S.dm.j80=2;S.dmv2=1;localStorage.setItem("conges",JSON.stringify(S))}
 let cur=new Date(),sel=null;cur.setDate(1);let Y=cur.getFullYear();
@@ -161,8 +164,11 @@ function pickF(f){S.fonc=f;save()}
 function useFon(){S.fdef=S.fonc;save()}
 function applyF(){const a=new Date($("f1").value+"T12:00:00"),b=new Date($("f2").value+"T12:00:00");if(isNaN(a)||isNaN(b))return;const v=$("ff").value;
 for(;a<=b;a.setDate(a.getDate()+1)){const k=iso(a);if(v)S.fon[k]=v;else delete S.fon[k]}save()}
+function baseF(f){return S.fdep[f]||S.debut}
+function initF(f){return +(S.soldeF[f]||0)}
+function congesF(f){let c=initF(f);for(const k in S.days){if(!S.days[k]||k<=baseF(f))continue;if((S.fon[k]||S.fdef)==f)c+=S.coef[S.days[k]]||0}return c}
 function cntF(f){let c=0;for(const k in S.days)if(S.days[k]&&(S.fon[k]||S.fdef)==f)c++;return c}
-function soldeF(f){let c=0;for(const k in S.days){if(!S.days[k]||k<=S.debut)continue;if((S.fon[k]||S.fdef)==f)c+=S.coef[S.days[k]]||0}return c}
+function soldeF(f){return congesF(f)}
 const meal=k=>S.meals[k]!==undefined?S.meals[k]:(S.dm[S.days[k]]||0);
 const pay=k=>{let d=new Date(k+"T12:00:00");if(+k.slice(8,10)>20)d.setMonth(d.getMonth()+1);return iso(d).slice(0,7)};
 function applyTheme(){const d=document.documentElement;d.removeAttribute("data-theme");if(S.th==="clair")d.setAttribute("data-theme","clair");if(S.th==="sombre")d.setAttribute("data-theme","sombre");for(const s in S.col)d.style.setProperty("--c-"+s,S.col[s])}
@@ -172,7 +178,8 @@ if(n==2){const a=ann();r2(a);$("tab2").textContent="2. Résumé "+a.année+" —
 else{$("tab1").textContent="1. Suivi "+ann().année+" — appuie ici pour ouvrir le résumé"}}
 function r2(a){
 $("v2").innerHTML=`<div class="card"><div class="nav"><button onclick="yr(-1)">‹</button><span id="ytitre"></span><button onclick="yr(1)">›</button></div>
-<div class="stats" style="margin-top:10px"><div class="stat"><b>${r(a.solde)}</b><span>Solde de congés</span></div></div>
+<div class="stats" style="margin-top:10px"><div class="stat"><b>${r(a.solde)}</b><span>Total des soldes</span></div></div>
+<div style="margin-bottom:10px">${a.fsol}</div>
 <div class="stats"><div class="stat"><b>${a.pm}</b><span>Primes gagnées</span></div><div class="stat"><b>${eur(a.pm*S.pp)}</b><span>Gagné</span></div></div>
 <div class="stats"><div class="stat"><b>${a.pm2}</b><span>Primes payées</span></div><div class="stat"><b>${eur(a.pm2*S.pp)}</b><span>Payé</span></div></div>
 <div class="stats"><div class="stat"><b>${a.rep}</b><span>Repas indemnisés</span></div><div class="stat"><b>${eur(a.rep*S.prix)}</b><span>Indemnités</span></div></div>
@@ -194,9 +201,9 @@ function resetYear(){if(!confirm("Effacer tous les jours saisis ? Cette action e
 function ann(){
 const A=Y,mois=[];
 for(let m=1;m<=12;m++)mois.push(A+"-"+String(m).padStart(2,"0"));
-let t=+S.ini,pm={},pm2={},mm={},ptr={},cnt={};
+let pm={},pm2={},mm={},ptr={},cnt={};
 for(const k in S.days){const s=S.days[k];if(!s)continue;cnt[s]=(cnt[s]||0)+1;if(k<=S.debut)continue;
-t+=S.coef[s]||0;ptr[k.slice(0,7)]=(ptr[k.slice(0,7)]||0)+(S.coef[s]||0);
+ptr[k.slice(0,7)]=(ptr[k.slice(0,7)]||0)+(S.coef[s]||0);
 const p=S.prime[s]||0;if(p){pm[k.slice(0,7)]=(pm[k.slice(0,7)]||0)+p;const pk=pay(k);pm2[pk]=(pm2[pk]||0)+p}
 mm[k.slice(0,7)]=(mm[k.slice(0,7)]||0)+meal(k)}
 const inA=m=>m.slice(0,4)==A+"";
@@ -214,7 +221,9 @@ return`<div class="mcard"><h3>${nm}</h3>
 <div class="mrow"><span>Repas indemnisés</span><b>${rp} (${eur(rp*S.prix)})</b></div></div>`}).join("");
 const ff={};for(const k in S.days){const s=S.days[k];if(!s||k<=S.debut||k.slice(0,4)!=A+"")continue;const f=S.fon[k]||S.fdef;ff[f]=(ff[f]||0)+(S.coef[s]||0)}
 const fchip=Object.keys(FN).filter(f=>ff[f]).map(f=>`<span class="chip">${FN[f]} : ${r(ff[f])} j</span>`).join("");
-return{ann\u00e9e:A,solde:t,pm:tG,pm2:tP,rep:tR,fchip:fchip,chips:chips||'<span class="note">Aucun jour saisi cette ann\u00e9e.</span>',mcards:mc||'<span class="note">Aucun mois renseign\u00e9.</span>'}}
+const fsol=Object.keys(FN).filter(f=>congesF(f)).map(f=>`<div class="mrow"><span>${FN[f]}</span><b>${r(congesF(f))} j</b></div>`).join("");
+let t2=0;for(const f in FN)t2+=congesF(f);
+return{année:A,solde:t2,pm:tG,pm2:tP,rep:tR,fsol:fsol,chips:chips||'<span class="note">Aucun jour saisi cette année.</span>',mcards:mc||'<span class="note">Aucun mois renseigné.</span>'}}
 const dim=m=>new Date(+m.slice(0,4),+m.slice(5,7),0).getDate();
 function goToday(){const t=iso(new Date());cur=new Date();cur.setDate(1);sel=t;if(!S.days[t])S.days[t]=S.last||"chantier";save()}
 function repeat(){if(sel&&S.last)S.days[sel]=S.last;else if(sel&&S.days[sel])S.last=S.days[sel];save()}
@@ -229,7 +238,7 @@ function restore(){try{const o=JSON.parse($("txt2").value.trim());if(!o||typeof 
 S=o;if(!S.backup)S.backup=today;localStorage.setItem("conges",JSON.stringify(S));alert("Données restaurées.");location.reload()}
 catch(e){alert("Ce texte n'est pas une sauvegarde valide.")}}
 function draw(){
-$("titre").textContent=cur.toLocaleDateString("fr-FR",{month:"long",year:"numeric"});
+$("titre").textContent=cur.toLocaleDateString("fr-FR",{month:"long",year:"numeric"});$("titre").title="Toucher pour choisir le mois";
 let h="";["L","M","M","J","V","S","D"].forEach(x=>h+=`<div class=h>${x}</div>`);
 let off=(cur.getDay()+6)%7;for(let i=0;i<off;i++)h+="<div></div>";
 let n=new Date(cur.getFullYear(),cur.getMonth()+1,0).getDate();
@@ -238,12 +247,13 @@ h+=`<div class="d ${s||""} ${k==today?"today":""} ${k==sel?"sel":""} ${(!s&&k<to
 $("cal").innerHTML=h;
 $("fpal").innerHTML=sel&&S.days[sel]?`<button class="${!S.fon[sel]?"on":""}" onclick="setFon('${sel}')">Défaut</button>`+Object.keys(FN).map(f=>`<button class="${S.fon[sel]==f?"on":""}" onclick="setFon('${sel}','${f}')">${FS[f]}</button>`).join(""):"";
 $("pal").innerHTML=sel?Object.keys(ST).map(s=>`<button class="${s}" onclick="setDay('${sel}','${s}')">${ST[s]}</button>`).join("")+`<button class="clr" onclick="setDay('${sel}')">Effacer</button>`+(S.days[sel]?`<div class="lb">Repas indemnisés ce jour</div>`+[0,1,2].map(n=>`<button class="ml ${meal(sel)===n?"on":""}" onclick="setMeal('${sel}',${n})">${n} repas</button>`).join(""):""):"<i>Touche un jour pour le renseigner</i>";
-let fs={};for(const f in FN)fs[f]=0;
-let t=+S.ini,pm={},pm2={},ym=iso(cur).slice(0,7);
-for(const k in S.days){if(k<=S.debut)continue;let s=S.days[k];t+=S.coef[s]||0;const ff2=S.fon[k]||S.fdef;fs[ff2]=(fs[ff2]||0)+(S.coef[s]||0);let p=S.prime[s]||0;if(p){pm[k.slice(0,7)]=(pm[k.slice(0,7)]||0)+p;pm2[pay(k).slice(0,7)]=(pm2[pay(k).slice(0,7)]||0)+p}}
-$("solde").textContent=r(t);
-const fAct=Object.keys(FN).filter(f=>fs[f]);
-$("fsoldes").innerHTML='<div class="note" style="margin-bottom:6px">Solde de congés par fonction</div>'+(fAct.length?fAct.map(f=>`<div class="stats" style="margin-bottom:8px"><div class="stat tot"><b>${r(fs[f])}</b><span>${FN[f]}</span></div></div>`).join(""):'<div class="note">Aucun jour saisi.</div>')+`<div class="stats" style="margin-bottom:0"><div class="stat"><b>${r(t)}</b><span>Total</span></div></div>`;
+let pm={},pm2={},ym=iso(cur).slice(0,7);
+for(const k in S.days){let s=S.days[k],p=S.prime[s]||0;if(p){pm[k.slice(0,7)]=(pm[k.slice(0,7)]||0)+p;pm2[pay(k).slice(0,7)]=(pm2[pay(k).slice(0,7)]||0)+p}}
+const fs={};for(const f in FN)fs[f]=congesF(f);
+let t2=0;for(const f in fs)t2+=fs[f];
+$("solde").textContent=r(t2);
+const fAct=Object.keys(FN).filter(f=>fs[f]||+S.soldeF[f]);
+$("fsoldes").innerHTML='<div class="note" style="margin-bottom:6px">Solde de congés par fonction</div>'+(fAct.length?fAct.map(f=>`<div class="stats" style="margin-bottom:8px"><div class="stat tot"><b>${r(fs[f])}</b><span>${FN[f]}</span></div></div>`).join(""):'<div class="note">Aucun jour saisi.</div>')+`<div class="stats" style="margin-bottom:0"><div class="stat"><b>${r(t2)}</b><span>Total</span></div></div>`;
 $("pg").textContent=pm[ym]||0;$("pge").textContent=eur((pm[ym]||0)*S.pp);
 $("pp").textContent=pm2[ym]||0;$("ppe").textContent=eur((pm2[ym]||0)*S.pp);
 const allm=[...new Set(Object.keys(pm).concat(Object.keys(pm2)))].sort();
@@ -269,7 +279,10 @@ $("reg").innerHTML=Object.keys(ST).map(s=>`<label style="flex-wrap:wrap"><span>$
 $("th").value=S.th;$("th").onchange=e=>{S.th=e.target.value;applyTheme();save()};
 $("fd").innerHTML=Object.keys(FN).map(f=>`<option value="${f}">${FN[f]}</option>`).join("");
 $("fd").value=S.fdef;$("fd").onchange=e=>{S.fdef=e.target.value;save()};
-$("freg").innerHTML=Object.keys(FN).map(f=>`<div class="mrow"><span>${FN[f]}</span><span>${cntF(f)} jour(s) · ${r(soldeF(f))} j</span></div>`).join("");
+$("freg").innerHTML=Object.keys(FN).map(f=>`<div class="box"><b>${FN[f]}</b>
+<label>Solde de départ <input type="number" step="0.1" style="width:70px" value="${S.soldeF[f]||0}" onchange="S.soldeF.${f}=+this.value;save()"></label>
+<label>Au <input type="date" value="${S.fdep[f]||S.debut}" onchange="S.fdep.${f}=this.value;save()"></label>
+<div class="note">${cntF(f)} jour(s) pointé(s) · solde actuel ${r(congesF(f))} j</div></div>`).join("");
 $("colors").innerHTML=Object.keys(ST).map(s=>`<label><span>${ST[s]}</span><input type="color" value="${S.col[s]}" onchange="S.col.${s}=this.value;applyTheme();save()"></label>`).join("");
 $("deb").value=S.debut;$("deb").onchange=e=>{S.debut=e.target.value;save()};
 $("pprix").value=S.pp;$("pprix").onchange=e=>{S.pp=+e.target.value;save()};
