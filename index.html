@@ -84,7 +84,7 @@ textarea{width:100%;height:110px;font-family:ui-monospace,Menlo,monospace;font-s
 const ST={base:"Base",chantier:"Chantier",cp:"CP",transit:"Transit",formation:"Formation",atm:"ATM",ce:"CE",j80:"Journée 80%"};
 const SH={base:"Base",chantier:"Chan",cp:"CP",transit:"Tran",formation:"Form",atm:"ATM",ce:"CE",j80:"80%"};
 const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-let S=JSON.parse(localStorage.getItem("conges")||"null")||{v:3,coef:{base:.7,chantier:.9,cp:-1,transit:.7,formation:.7,atm:.1,ce:.1,j80:0},prime:{chantier:1},debut:"2026-08-31",ini:0,days:{},backup:"",meals:{},prix:7.88,dm:{base:1,chantier:2,cp:0,transit:0,formation:0,atm:0,ce:0,j80:0}};
+let S=JSON.parse(localStorage.getItem("conges")||"null")||{v:3,coef:{base:.7,chantier:.9,cp:-1,transit:.7,formation:.7,atm:.1,ce:.1,j80:0},prime:{chantier:1},debut:"2026-08-31",ini:0,days:{},backup:"",meals:{},prix:7.88,dm:{base:1,chantier:0,cp:2,transit:2,formation:2,atm:2,ce:2,j80:0}};
 if(S.v!=2&&S.v!=3){
  for(const k in S.days)if(S.days[k]=="repos")S.days[k]="cp";
  if(S.coef.repos!==undefined){S.coef.cp=S.coef.repos;delete S.coef.repos}
@@ -99,7 +99,8 @@ if(S.v==2){
  if(S.coef.j80===undefined)S.coef.j80=0;
  S.v=3;localStorage.setItem("conges",JSON.stringify(S));
 }
-if(!S.backup)S.backup="";if(!S.meals)S.meals={};if(!S.prix)S.prix=7.88;if(!S.dm)S.dm={base:1,chantier:2,cp:0,transit:0,formation:0,atm:0,ce:0,j80:0};
+if(!S.backup)S.backup="";if(!S.meals)S.meals={};if(!S.prix)S.prix=7.88;if(!S.dm)S.dm={base:1,chantier:0,cp:2,transit:2,formation:2,atm:2,ce:2,j80:0};
+if(S.dm.chantier===2&&!S.meals&&!S.dmv){S.dm.chantier=0;S.dm.cp=2;S.dm.transit=2;S.dm.formation=2;S.dm.atm=2;S.dm.ce=2;S.dmv=1;localStorage.setItem("conges",JSON.stringify(S))}
 let cur=new Date(),sel=null;cur.setDate(1);
 const today=iso(new Date());
 const $=i=>document.getElementById(i),save=()=>{localStorage.setItem("conges",JSON.stringify(S));draw()};
