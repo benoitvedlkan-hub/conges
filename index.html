@@ -5,8 +5,10 @@
 <meta name="theme-color" content="#0b3d6b">
 <title>Congés</title>
 <style>
+html[data-theme=clair]{color-scheme:light}html[data-theme=sombre]{color-scheme:dark}
 :root{--bg:#eef2f7;--card:#fff;--txt:#14202e;--mut:#6b7a8c;--line:#e3e8ef;--acc:#0b6bcb;--inp:#f5f7fa;--warn:#fff3cd;--warnx:#7a5c00}
-@media(prefers-color-scheme:dark){:root{--bg:#0d141d;--card:#17212d;--txt:#eaf0f7;--mut:#8b9bb0;--line:#26323f;--acc:#4da3ff;--inp:#1e2a38;--warn:#3a3316;--warnx:#ffe08a}}
+@media(prefers-color-scheme:dark){html:not([data-theme=clair]){--bg:#0d141d;--card:#17212d;--txt:#eaf0f7;--mut:#8b9bb0;--line:#26323f;--acc:#4da3ff;--inp:#1e2a38;--warn:#3a3316;--warnx:#ffe08a}}
+html[data-theme=sombre]{--bg:#0d141d;--card:#17212d;--txt:#eaf0f7;--mut:#8b9bb0;--line:#26323f;--acc:#4da3ff;--inp:#1e2a38;--warn:#3a3316;--warnx:#ffe08a}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0;background:var(--bg);color:var(--txt);padding-bottom:env(safe-area-inset-bottom)}
 .hero{background:linear-gradient(160deg,#0b3d6b,#0b6bcb);color:#fff;padding:calc(env(safe-area-inset-top) + 18px) 16px 70px;border-radius:0 0 28px 28px}
@@ -30,7 +32,8 @@ button{border:0;border-radius:12px;padding:10px 14px;background:var(--acc);color
 .h{background:none;aspect-ratio:auto;font-size:11px;color:var(--mut);text-align:center;font-weight:600}
 .today{box-shadow:inset 0 0 0 2px var(--acc)}
 .sel{outline:3px solid var(--txt);outline-offset:1px}
-.base{background:#9fd0ff;color:#06283f}.chantier{background:#ffc983;color:#4a2a00}.cp{background:#a6e6a1;color:#0d3a0b}.transit{background:#d3bdff;color:#2b1259}.formation{background:#ffe97a;color:#4a3d00}.atm{background:#ffb3c7;color:#4a0f20}.ce{background:#9eeaea;color:#043a3a}.j80{background:#cfd5dc;color:#27303a}
+.miss{background:repeating-linear-gradient(45deg,var(--inp),var(--inp) 6px,#ffd9a0 6px,#ffd9a0 12px)}
+.base{background:var(--c-base,#9fd0ff);color:#06283f}.chantier{background:var(--c-chantier,#ffc983);color:#4a2a00}.cp{background:var(--c-cp,#a6e6a1);color:#0d3a0b}.transit{background:var(--c-transit,#d3bdff);color:#2b1259}.formation{background:var(--c-formation,#ffe97a);color:#4a3d00}.atm{background:var(--c-atm,#ffb3c7);color:#4a0f20}.ce{background:var(--c-ce,#9eeaea);color:#043a3a}.j80{background:var(--c-j80,#cfd5dc);color:#27303a}
 .pal{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}.pal button{flex:1;min-width:28%;color:#222}
 .pal .lb{width:100%;font-size:13px;color:var(--mut);font-weight:600;margin-top:4px}.pal .ml{background:var(--inp);color:var(--txt);min-width:20%}.pal .ml.on{background:var(--acc);color:#fff}
 .pal i{color:var(--mut);font-size:14px;width:100%;text-align:center}
@@ -45,20 +48,37 @@ label{display:flex;justify-content:space-between;align-items:center;gap:8px;marg
 .warn{background:var(--warn);color:var(--warnx);border-radius:14px;padding:10px;margin-bottom:12px;font-size:14px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
 .warn button{background:var(--warnx);color:var(--warn);flex:1;min-width:120px}
 textarea{width:100%;height:110px;font-family:ui-monospace,Menlo,monospace;font-size:12px}
+.tabs{display:flex;gap:6px;margin-bottom:12px}
+.tabs button{flex:1;background:var(--card);color:var(--mut);font-size:14px}
+.tabs button.on{background:var(--acc);color:#fff}
+.mcards{display:grid;grid-template-columns:1fr;gap:10px}
+.mcard{background:var(--inp);border-radius:14px;padding:10px}
+.mcard h3{margin:0 0 8px;font-size:14px;text-transform:capitalize}
+.mrow{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;border-bottom:1px solid var(--line)}
+.mrow:last-child{border:0}
+.mrow b{font-weight:600}
+.quick{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.quick button{flex:1;min-width:40%;font-size:14px;padding:8px}
+.quick .ghost{background:var(--inp);color:var(--txt)}
+.nav span{cursor:pointer}
+.chip{display:inline-block;background:var(--inp);border-radius:10px;padding:3px 8px;margin:2px 3px 0 0;font-size:12px}
 </style></head><body>
 <div class="hero"><h1>Solde de congés</h1><div class="sol"><span id="solde">0</span><small>jours</small></div></div>
 <div class="wrap">
+<div class="tabs"><button id="tab1" class="on" onclick="tab(1)">Suivi</button><button id="tab2" onclick="tab(2)">Résumé annuel</button></div>
 <div class="warn" id="warn" style="display:none"><span id="wtxt"></span><button onclick="copy()">Copier la sauvegarde</button></div>
 <div class="stats"><div class="stat"><b id="pg">0</b><span>Primes gagnées ce mois</span></div><div class="stat"><b id="pge">0 €</b><span>Montant brut gagné</span></div></div>
 <div class="stats"><div class="stat"><b id="pp">0</b><span>Primes payées ce mois</span></div><div class="stat"><b id="ppe">0 €</b><span>Montant brut payé</span></div></div>
+<div id="v1">
 <div class="stats" style="margin-top:0"><div class="stat"><b id="rm">0</b><span>Repas indemnisés ce mois (sur le maximum possible)</span></div><div class="stat"><b id="re">0 €</b><span>Indemnités nourriture</span></div></div>
-<div class="card"><div class="nav"><button onclick="mv(-1)">‹</button><span id="titre"></span><button onclick="mv(1)">›</button></div>
+<div class="card"><div class="nav"><button onclick="mv(-1)">‹</button><span id="titre" onclick="jump()"></span><button onclick="mv(1)">›</button></div>
 <div class="grid" id="cal"></div>
 <div class="pal" id="pal"></div></div>
 <div class="card"><h2>Saisie d'une période</h2>
 <div class="row"><input type="date" id="d1"><input type="date" id="d2"></div>
 <div class="row" style="margin-top:8px"><select id="st" style="flex:1"></select><select id="ml" style="flex:1"><option value="">Repas : défaut du statut</option><option value="0">0 repas</option><option value="1">1 repas</option><option value="2">2 repas</option></select></div>
-<div class="row" style="margin-top:8px"><button onclick="fill()" style="flex:1">Appliquer</button></div></div>
+<div class="row" style="margin-top:8px"><button onclick="fill()" style="flex:1">Appliquer</button></div>
+<div class="quick"><button class="ghost" onclick="goToday()">Aujourd'hui</button><button class="ghost" onclick="repeat()">Répéter le dernier statut</button></div></div>
 <div class="card"><h2>Primes par mois</h2><table id="tp"></table><div class="note" id="tps"></div></div>
 <div class="card"><h2>Indemnités nourriture par mois</h2><table id="tm"></table><div class="note" id="tms"></div></div>
 <div class="card"><details><summary>Sauvegarde</summary>
@@ -80,13 +100,18 @@ textarea{width:100%;height:110px;font-family:ui-monospace,Menlo,monospace;font-s
 <label>Montant d'une prime (€ brut) <input type="number" step="0.5" id="pprix" style="width:100px"></label>
 <label>Prix d'un repas (€) <input type="number" step="0.01" id="prix" style="width:100px"></label>
 <div id="reg"></div>
+<label>Thème <select id="th" style="width:130px"><option value="auto">Automatique</option><option value="clair">Clair</option><option value="sombre">Sombre</option></select></label>
+<div class="note">Couleurs des statuts</div>
+<div id="colors"></div>
 </details></div>
+</div>
+<div id="v2" style="display:none"></div>
 </div>
 <script>
 const ST={base:"Base",chantier:"Chantier",cp:"CP",transit:"Transit",formation:"Formation",atm:"ATM",ce:"CE",j80:"Journée 80%"};
 const SH={base:"Base",chantier:"Chan",cp:"CP",transit:"Tran",formation:"Form",atm:"ATM",ce:"CE",j80:"80%"};
 const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-let S=JSON.parse(localStorage.getItem("conges")||"null")||{v:3,coef:{base:.7,chantier:.9,cp:-1,transit:.7,formation:.7,atm:.1,ce:.1,j80:0},prime:{chantier:1},debut:"2026-08-31",ini:0,days:{},backup:"",meals:{},prix:7.88,pp:50,dm:{base:1,chantier:0,cp:2,transit:2,formation:2,atm:2,ce:2,j80:2}};
+let S=JSON.parse(localStorage.getItem("conges")||"null")||{v:3,coef:{base:.7,chantier:.9,cp:-1,transit:.7,formation:.7,atm:.1,ce:.1,j80:0},prime:{chantier:1},debut:"2026-08-31",ini:0,days:{},backup:"",meals:{},prix:7.88,pp:50,dm:{base:1,chantier:0,cp:2,transit:2,formation:2,atm:2,ce:2,j80:2},col:{base:"#9fd0ff",chantier:"#ffc983",cp:"#a6e6a1",transit:"#d3bdff",formation:"#ffe97a",atm:"#ffb3c7",ce:"#9eeaea",j80:"#cfd5dc"},th:"auto"};
 if(S.v!=2&&S.v!=3){
  for(const k in S.days)if(S.days[k]=="repos")S.days[k]="cp";
  if(S.coef.repos!==undefined){S.coef.cp=S.coef.repos;delete S.coef.repos}
@@ -102,21 +127,73 @@ if(S.v==2){
  S.v=3;localStorage.setItem("conges",JSON.stringify(S));
 }
 if(!S.backup)S.backup="";if(!S.meals)S.meals={};if(!S.prix)S.prix=7.88;if(!S.pp)S.pp=50;if(!S.dm)S.dm={base:1,chantier:0,cp:2,transit:2,formation:2,atm:2,ce:2,j80:0};
+if(!S.col)S.col={base:"#9fd0ff",chantier:"#ffc983",cp:"#a6e6a1",transit:"#d3bdff",formation:"#ffe97a",atm:"#ffb3c7",ce:"#9eeaea",j80:"#cfd5dc"};
+if(!S.th)S.th="auto";
 if(S.dm.chantier===2&&!S.meals&&!S.dmv){S.dm.chantier=0;S.dm.cp=2;S.dm.transit=2;S.dm.formation=2;S.dm.atm=2;S.dm.ce=2;S.dmv=1;localStorage.setItem("conges",JSON.stringify(S))}
 if(S.dm.j80===0&&!S.dmv2){S.dm.j80=2;S.dmv2=1;localStorage.setItem("conges",JSON.stringify(S))}
-let cur=new Date(),sel=null;cur.setDate(1);
+let cur=new Date(),sel=null;cur.setDate(1);let Y=cur.getFullYear();
 const today=iso(new Date());
 const $=i=>document.getElementById(i),save=()=>{localStorage.setItem("conges",JSON.stringify(S));draw()};
 const r=x=>Math.round(x*100)/100;
 const daysN=()=>Object.keys(S.days).length;
 const backup=()=>{S.backup=today;localStorage.setItem("conges",JSON.stringify(S));draw()};
-function mv(n){cur.setMonth(cur.getMonth()+n);draw()}
-function setDay(k,s){if(s)S.days[k]=s;else{delete S.days[k];delete S.meals[k]}save()}
+function mv(n){cur.setMonth(cur.getMonth()+n);Y=cur.getFullYear();draw()}
+function jump(){const v=prompt("Aller au mois (1-12) :",String(cur.getMonth()+1));if(!v)return;const m=+v;if(m>=1&&m<=12){cur.setMonth(m-1);Y=cur.getFullYear();draw()}}
+function setDay(k,s){if(s){S.days[k]=s;S.last=s}else{delete S.days[k];delete S.meals[k]}save()}
 function setMeal(k,n){S.meals[k]=n;save()}
 const meal=k=>S.meals[k]!==undefined?S.meals[k]:(S.dm[S.days[k]]||0);
 const pay=k=>{let d=new Date(k+"T12:00:00");if(+k.slice(8,10)>20)d.setMonth(d.getMonth()+1);return iso(d).slice(0,7)};
 const dim=m=>new Date(+m.slice(0,4),+m.slice(5,7),0).getDate();
 const eur=x=>(Math.round(x*100)/100).toFixed(2).replace(".",",")+" €";
+function applyTheme(){const d=document.documentElement;d.removeAttribute("data-theme");if(S.th==="clair")d.setAttribute("data-theme","clair");if(S.th==="sombre")d.setAttribute("data-theme","sombre");for(const s in S.col)d.style.setProperty("--c-"+s,S.col[s])}
+function tab(n){$("v1").style.display=n==1?"block":"none";$("v2").style.display=n==2?"block":"none";
+$("tab1").className=n==1?"on":"";$("tab2").className=n==2?"on":"";
+$("tab1").textContent=n==1?"Suivi":"1. Suivi";$("tab2").textContent=n==2?"Résumé annuel":"2. Résumé annuel";
+if(n==2){const a=ann();r2(a);$("tab2").textContent="2. Résumé "+a.année+" — appuie ici pour fermer"}
+else{$("tab1").textContent="1. Suivi "+ann().année+" — appuie ici pour ouvrir le résumé"}}
+function r2(a){
+$("v2").innerHTML=`<div class="card"><div class="nav"><button onclick="yr(-1)">‹</button><span id="ytitre"></span><button onclick="yr(1)">›</button></div>
+<div class="stats" style="margin-top:10px"><div class="stat"><b>${r(a.solde)}</b><span>Solde de congés</span></div></div>
+<div class="stats"><div class="stat"><b>${a.pm}</b><span>Primes gagnées</span></div><div class="stat"><b>${eur(a.pm*S.pp)}</b><span>Gagné</span></div></div>
+<div class="stats"><div class="stat"><b>${a.pm2}</b><span>Primes payées</span></div><div class="stat"><b>${eur(a.pm2*S.pp)}</b><span>Payé</span></div></div>
+<div class="stats"><div class="stat"><b>${a.rep}</b><span>Repas indemnisés</span></div><div class="stat"><b>${eur(a.rep*S.prix)}</b><span>Indemnités</span></div></div>
+<div class="note">Total encaissable : ${eur(a.pm*S.pp+a.rep*S.prix)} (brut).</div></div>
+<div class="card"><h2>Jours par statut en ${a.année}</h2>${a.chips}</div>
+<div class="card"><h2>Mois par mois</h2><div class="mcards">${a.mcards}</div></div>
+<div class="card"><div class="row"><button onclick="exportCsv()" style="background:var(--inp);color:var(--txt)">Exporter en CSV</button><button onclick="resetYear()" style="background:var(--inp);color:var(--txt)">Effacer tous les jours</button></div>
+<div class="note">L'export CSV s'ouvre dans Excel ou Numbers. L'effacement supprime tous les jours saisis, sans toucher aux réglages.</div></div>`;
+$("ytitre").textContent="Année "+a.année;
+$("ytitre").onclick=()=>{tab(1)};
+}
+function yr(n){Y+=n;r2(ann())}
+function exportCsv(){let l=["date;statut;repas;prime;paye"],ks=Object.keys(S.days).sort();
+for(const k of ks){const s=S.days[k];l.push(k+";"+(ST[s]||s)+";"+meal(k)+";"+(S.prime[s]||0)+";"+pay(k))}
+const t=new Blob(["\ufeff"+l.join("\n")],{type:"text/csv"});const u=document.createElement("a");u.href=URL.createObjectURL(t);u.download="suivi-conges.csv";u.click()}
+function resetYear(){if(!confirm("Effacer tous les jours saisis ? Cette action est définitive."))return;S.days={};S.meals={};save()}
+function ann(){
+const A=Y,mois=[];
+for(let m=1;m<=12;m++)mois.push(A+"-"+String(m).padStart(2,"0"));
+let t=+S.ini,pm={},pm2={},mm={},ptr={},cnt={};
+for(const k in S.days){const s=S.days[k];if(!s)continue;cnt[s]=(cnt[s]||0)+1;if(k<=S.debut)continue;
+t+=S.coef[s]||0;ptr[k.slice(0,7)]=(ptr[k.slice(0,7)]||0)+(S.coef[s]||0);
+const p=S.prime[s]||0;if(p){pm[k.slice(0,7)]=(pm[k.slice(0,7)]||0)+p;const pk=pay(k);pm2[pk]=(pm2[pk]||0)+p}
+mm[k.slice(0,7)]=(mm[k.slice(0,7)]||0)+meal(k)}
+const inA=m=>m.slice(0,4)==A+"";
+const tG=Object.keys(pm).filter(inA).reduce((a,m)=>a+pm[m],0);
+const tP=Object.keys(pm2).filter(inA).reduce((a,m)=>a+pm2[m],0);
+const tR=Object.keys(mm).filter(inA).reduce((a,m)=>a+mm[m],0);
+const chips=Object.keys(ST).map(s=>cnt[s]?`<span class="chip">${ST[s]} : ${cnt[s]}</span>`:"").join("");
+const mc=mois.map((m,i)=>{const d1=ptr[m]||0,g=pm[m]||0,p=pm2[m]||0,rp=mm[m]||0;
+if(!d1&&!g&&!p&&!rp)return"";
+const nm=new Date(A,i,1).toLocaleDateString("fr-FR",{month:"long",year:"numeric"});
+return`<div class="mcard"><h3>${nm}</h3>
+<div class="mrow"><span>Congés acquis</span><b>${r(d1)}</b></div>
+<div class="mrow"><span>Primes gagnées</span><b>${g} (${eur(g*S.pp)})</b></div>
+<div class="mrow"><span>Primes payées</span><b>${p} (${eur(p*S.pp)})</b></div>
+<div class="mrow"><span>Repas indemnisés</span><b>${rp} (${eur(rp*S.prix)})</b></div></div>`}).join("");
+return{année:A,solde:t,pm:tG,pm2:tP,rep:tR,chips:chips||'<span class="note">Aucun jour saisi cette année.</span>',mcards:mc||'<span class="note">Aucun mois renseigné.</span>'}}
+function goToday(){const t=iso(new Date());cur=new Date();cur.setDate(1);sel=t;if(!S.days[t])S.days[t]=S.last||"chantier";save()}
+function repeat(){if(sel&&S.last)S.days[sel]=S.last;else if(sel&&S.days[sel])S.last=S.days[sel];save()}
 function fill(){let a=new Date($("d1").value+"T12:00:00"),b=new Date($("d2").value+"T12:00:00");if(isNaN(a)||isNaN(b))return;
 for(;a<=b;a.setDate(a.getDate()+1)){S.days[iso(a)]=$("st").value;if($("ml").value!=="")S.meals[iso(a)]=+$("ml").value;else delete S.meals[iso(a)]}save()}
 function copy(){const t=JSON.stringify(S);$("txt").value=t;
@@ -132,7 +209,7 @@ let h="";["L","M","M","J","V","S","D"].forEach(x=>h+=`<div class=h>${x}</div>`);
 let off=(cur.getDay()+6)%7;for(let i=0;i<off;i++)h+="<div></div>";
 let n=new Date(cur.getFullYear(),cur.getMonth()+1,0).getDate();
 for(let i=1;i<=n;i++){let k=iso(new Date(cur.getFullYear(),cur.getMonth(),i)),s=S.days[k];
-h+=`<div class="d ${s||""} ${k==today?"today":""} ${k==sel?"sel":""}" onclick="sel='${k}';draw()">${i}<small>${s?SH[s]:""}</small></div>`}
+h+=`<div class="d ${s||""} ${k==today?"today":""} ${k==sel?"sel":""} ${(!s&&k<today)?"miss":""}" onclick="sel='${k}';draw()">${i}<small>${s?SH[s]:""}</small></div>`}
 $("cal").innerHTML=h;
 $("pal").innerHTML=sel?Object.keys(ST).map(s=>`<button class="${s}" onclick="setDay('${sel}','${s}')">${ST[s]}</button>`).join("")+`<button class="clr" onclick="setDay('${sel}')">Effacer</button>`+(S.days[sel]?`<div class="lb">Repas indemnisés ce jour</div>`+[0,1,2].map(n=>`<button class="ml ${meal(sel)===n?"on":""}" onclick="setMeal('${sel}',${n})">${n} repas</button>`).join(""):""):"<i>Touche un jour pour le renseigner</i>";
 let t=+S.ini,pm={},pm2={},ym=iso(cur).slice(0,7);
@@ -155,13 +232,15 @@ let j=S.backup?Math.round((new Date(today)-new Date(S.backup))/864e5):999;
 if(daysN()&&j>=15){$("warn").style.display="flex";
 $("wtxt").textContent=j>900?"Pense à enregistrer une sauvegarde de tes données.":("Dernière sauvegarde il y a "+j+" jours. Pense à en sauvegarder une.")}
 else $("warn").style.display="none";
+if($("v2").style.display!=="none")r2(ann());
 }
 $("st").innerHTML=Object.keys(ST).map(s=>`<option value=${s}>${ST[s]}</option>`).join("");
 $("reg").innerHTML=Object.keys(ST).map(s=>`<label style="flex-wrap:wrap"><span>${ST[s]}</span><span>congés <input type=number step=0.1 style="width:64px" value="${S.coef[s]||0}" onchange="S.coef.${s}=+this.value;save()"> prime <input type=number step=1 style="width:54px" value="${S.prime[s]||0}" onchange="S.prime.${s}=+this.value;save()"> repas <input type=number min=0 max=2 step=1 style="width:54px" value="${S.dm[s]||0}" onchange="S.dm.${s}=+this.value;save()"></span></label>`).join("");
+$("th").value=S.th;$("th").onchange=e=>{S.th=e.target.value;applyTheme();save()};
+$("colors").innerHTML=Object.keys(ST).map(s=>`<label><span>${ST[s]}</span><input type="color" value="${S.col[s]}" onchange="S.col.${s}=this.value;applyTheme();save()"></label>`).join("");
 $("deb").value=S.debut;$("deb").onchange=e=>{S.debut=e.target.value;save()};
 $("pprix").value=S.pp;$("pprix").onchange=e=>{S.pp=+e.target.value;save()};
 $("prix").value=S.prix;$("prix").onchange=e=>{S.prix=+e.target.value;save()};
 $("ini").value=S.ini;$("ini").onchange=e=>{S.ini=+e.target.value;save()};
-draw();
+applyTheme();draw();tab(1);
 </script></body></html>
-
